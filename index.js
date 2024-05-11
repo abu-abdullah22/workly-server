@@ -60,6 +60,35 @@ async function run() {
       res.send(result) ;
     })
 
+    app.get('/jobs/:email', async(req,res)=> {
+      const email = req.params.email ;
+      const query = {email : email} ;
+      const result = await jobCollection.find(query).toArray() ;
+      res.send(result) ;
+    })
+
+    app.put('/job/:id', async(req, res)=> {
+      const id = req.params.id ;
+      const query = {_id : new ObjectId(id)} ;
+      const jobData = req.body ;
+      const options = {upsert : true} ;
+      const updateDoc = {
+        $set : {
+          ...jobData, 
+        }
+      }
+      const result = await jobCollection.updateOne(query, updateDoc, options);
+      res.send(result) ;
+   
+    })
+
+    app.delete('/job/:id', async(req, res)=> {
+      const id = req.params.id ;
+      const query = {_id : new ObjectId(id)}
+      const result = await jobCollection.deleteOne(query) ;
+      res.send(result) ;
+    })
+
 
 
 
