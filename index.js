@@ -33,6 +33,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
      const jobCollection = client.db('worklyDB').collection('jobs') ;
+     const applyCollection = client.db('worklyDB').collection('applied') ;
     // await client.connect();
 
     app.get('/jobs', async(req,res)=> {
@@ -44,6 +45,12 @@ async function run() {
       const id = req.params.id ;
       const query = {_id : new ObjectId(id)}
       const result = await jobCollection.findOne(query) ;
+      res.send(result) ;
+    })
+
+    app.post('/applied', async(req,res)=> {
+      const appliedData = req.body ;
+      const result = await applyCollection.insertOne(appliedData) ;
       res.send(result) ;
     })
 
