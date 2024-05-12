@@ -3,6 +3,7 @@ const cors = require('cors') ;
 require('dotenv').config() ;
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const cookieParser = require('cookie-parser');
 const port = process.env.PORT || 5000 ;
 
 const app = express() ;
@@ -17,6 +18,24 @@ app.use(
     })
   );
 app.use(express.json()) ;
+app.use(cookieParser());
+
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token ;
+  if(!token){
+    return res.status(401).send({message: 'unauthorized access'})
+  }
+  if(token){
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=> {
+      if(err){
+        console.log(err);
+        return res.status(401).send({message: 'unauthorized access'}) ;
+      } 
+      req.user = decoded ;
+      next()
+    })
+  }
+}
 
 
 
@@ -41,7 +60,7 @@ async function run() {
     // jwt
     app.post('/jwt', async(req, res)=> {
       const user = req.body ;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1hr'})
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '2d'})
       res.cookie('token', token, {
         httpOnly: true, 
         secure: process.env.NODE_ENV=== 'production',
@@ -63,7 +82,11 @@ async function run() {
 
 
     app.get('/jobs', async(req,res)=> {
-      const result = await jobCollection.find().toArray() ;
+      const search = req.query.search ;
+      let query = {
+        job_title : {$regex : search, $options : 'i'}
+      }
+      const result = await jobCollection.find(query).toArray() ;
       res.send(result) ;
     })
 
@@ -86,16 +109,24 @@ async function run() {
       res.send(result) ;
     })
 
-    app.get('/jobs/:email', async(req,res)=> {
+    app.get('/jobs/:email',verifyToken, async(req,res)=> {
+      const tokenData = req?.user?.email ;
       const email = req.params.email ;
+      if(tokenData !== email) {
+        return res.status(403).send({message: 'forbidden access'})
+      }
       const query = {email : email} ;
       const result = await jobCollection.find(query).toArray() ;
       res.send(result) ;
     })
 
 
-    app.get('/apply/:email', async(req,res)=> {
+    app.get('/apply/:email',verifyToken, async(req,res)=> {
+      const tokenData = req?.user?.email ;
       const email = req.params.email ;
+      if(tokenData !== email) {
+        return res.status(403).send({message: 'forbidden access'})
+      }
       const query = {applierEmail : email} ;
       const result = await applyCollection.find(query).toArray() ;
       res.send(result) ;
