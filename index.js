@@ -102,7 +102,27 @@ async function run() {
 
     app.post('/applied', async(req,res)=> {
       const appliedData = req.body ;
+      console.log(appliedData);
+      const query = {
+        jobId: appliedData.jobId
+      
+      }
+      const alreadyApplied = await applyCollection.findOne(query) ;
+      if(alreadyApplied){
+        return res.status(400).send('You have already applied!')
+      }
+
+
       const result = await applyCollection.insertOne(appliedData) ;
+
+      const updateDoc ={
+   
+     $inc:{job_applicants_number : 1}
+       
+      }
+      const jobQuery = {_id : new ObjectId (appliedData.jobId) }
+      const updateApplyCount = await jobCollection.updateOne(jobQuery, updateDoc)
+
       res.send(result) ;
     })
 
