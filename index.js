@@ -55,6 +55,7 @@ async function run() {
   try {
      const jobCollection = client.db('worklyDB').collection('jobs') ;
      const applyCollection = client.db('worklyDB').collection('applied') ;
+     const blogCollection = client.db('worklyDB').collection('blogs') ;
     // await client.connect();
 
     // jwt
@@ -81,6 +82,11 @@ async function run() {
 
   app.get('/jobs', async(req,res)=> {
     const result = await jobCollection.find().toArray();
+    res.send(result);
+  })
+
+  app.get('/blogs', async(req,res)=> {
+    const result = await blogCollection.find().toArray();
     res.send(result);
   })
 
@@ -131,6 +137,9 @@ async function run() {
       const result = await jobCollection.insertOne(addData) ;
       res.send(result) ;
     })
+
+
+    
 
     app.get('/jobs/:email',verifyToken, async(req,res)=> {
       const tokenData = req?.user?.email ;
